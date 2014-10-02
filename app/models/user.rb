@@ -4,11 +4,13 @@ class User < ActiveRecord::Base
 
 
   def login_attempt_counter
-    #everytime there is a bad login attempt update the counter in the sessions database
+    self.update(logins: (self.logins + 1))
   end
 
   def check_user_logins
-   #when there is a bad attempt, check the sessions db to see if they have reached the maximum
+   if self.logins >= 4
+     self.update(active: false)
+   end
   end
 
   def erase_logins
@@ -16,12 +18,9 @@ class User < ActiveRecord::Base
   end
 
   def wait_1_minute
-    if
-     # if the current time is less than 1 minute since the last bad attempt, update the counter again
-    else
-      erase_logins
-      login_attempt_counter
-    end
+    sleep(60)
+    erase_logins
+    self.update(active: true)
   end
 
 

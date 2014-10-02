@@ -7,21 +7,25 @@ class SessionsController < ApplicationController
 
   def create
     @user = User.find_by(email: params[:user][:email])
-    if @user && @user.password == params[:user][:password]
-      session[:user_id] = @user.id
-      @user.erase_logins
-      p "You're Super smart"
-      redirect_to root_path
-    elsif @user
-      if @user.logins == 0
-        p "logins are 0"
-        @user.login_attempt_counter
-      else
-        p "logins are more than 0"
-        @user.wait_2_minutes
-      end
-      @user.check_user_logins
+    @user.update(last_login_attempt: Time.now)
+    if @user.active == false
+      flash[:notice] = "You've reached your maximum number of attempts. Please wait 1 minute."
+      @user.wait_1_minute
       render :new
+    else
+      if @user && @user.password == params[:user][:password]
+        session[:user_id] = @user.id
+        @user.erase_logins
+        p "You're Super smart"
+        redirect_to root_path
+      elsif @user
+        if @user.logins < 4
+          @user.login_attempt_counter
+          @user.check_user_logins
+          flash[:notice] = "#{@user.logins} out of 4 login attempts"
+          render :new
+        end
+      end
     end
   end
 end
